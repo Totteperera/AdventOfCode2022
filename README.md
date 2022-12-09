@@ -1,0 +1,1 @@
+Learning python and doing AoC for the first time!
