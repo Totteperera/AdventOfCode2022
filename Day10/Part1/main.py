@@ -23,7 +23,7 @@ class Cpu:
             self.sum += self.cycle * self.x 
 
 
-f = open("input.txt")
+f = open("../input.txt")
 cpu = Cpu()
 
 for line in f:
