@@ -4,7 +4,7 @@ class Monkey:
     def __init__(
         self,
         starting_items: list,
-        get_new_worry_level : function,
+        get_new_worry_level,
         divisble_by: int,
         send_to_if_true: int,
         send_to_if_false: int):
@@ -19,19 +19,28 @@ class Monkey:
     def receive(self, item: int):
         self.starting_items.append(item)
 
+    def get_receiving_monkey_number(self, divisible_nr: int) -> int:
+        return self.send_to_if_true if divisible_nr % int(self.divisble_by) == 0 else self.send_to_if_false
+
+    def add_sent(self):
+        self.has_sent += 1
+
+    def clear(self):
+        self.starting_items = []
 
 def get_starting_items(line: str) -> list:
     return list(map(lambda x: int(x.strip()), list(line.split(":")[1].split(","))))
 
-def get_operation(line: str) -> function:
-
+def get_operation(line: str):
     right_values = line.split("=")[1].split(" ")
 
-    operation_value = int(right_values[-1])
-    operation = right_values[1]
+    operation = right_values[-2]
 
-    def operation(old: int):
+    def operation_function(old: int):
+        operation_value = old if right_values[-1] == "old" else int(right_values[-1])
+        print("operation_value", operation_value)
         result = 0
+        print("operation,", operation)
         if(operation == "+"):
             result = old + operation_value
         else:
@@ -39,16 +48,16 @@ def get_operation(line: str) -> function:
 
         return math.floor(result / 3)
 
-    return operation()
+    return operation_function
 
 def get_divisible_by(line: str) -> int:
-    return line.split(" ")[-1]
+    return int(line.split(" ")[-1])
 
 def get_send_to_if_true(line: str) -> int:
-    return line.split(" ")[-1]
+    return int(line.split(" ")[-1])
 
 def get_send_to_if_false(line: str) -> int:
-    return line.split(" ")[-1]
+    return int(line.split(" ")[-1])
 
 monkeys = []
 
@@ -61,10 +70,10 @@ with open("../input.txt") as f:
             monkeys.append(
                 Monkey(
                     get_starting_items(f.readline()),
-                    get_operation(f.readline()),
-                    get_divisible_by(f.readline),
-                    get_send_to_if_true(f.readline),
-                    get_send_to_if_false(f.readline)
+                    get_operation(f.readline().strip()),
+                    get_divisible_by(f.readline().strip()),
+                    get_send_to_if_true(f.readline().strip()),
+                    get_send_to_if_false(f.readline().strip())
                 )
             )
 
@@ -72,7 +81,20 @@ with open("../input.txt") as f:
 nr_of_rounds = 20
 
 for i in range(nr_of_rounds):
-    for monkey in monkeys:
+    for monkey_index in range(len(monkeys)):
+        monkey = monkeys[monkey_index]
+        print("monkey ", monkey_index, "has worry levels", *monkey.starting_items)
         for worry_level in monkey.starting_items:
             new_worry_level = monkey.get_new_worry_level(worry_level)
-            
+            print("round ", i, "new worry level", new_worry_level)
+            monkey_to_send_to_index = monkey.get_receiving_monkey_number(new_worry_level)
+            print("monkey_to_send_to_index", monkey_to_send_to_index)
+            monkeys[monkey_to_send_to_index].receive(new_worry_level)
+            monkey.add_sent()
+        monkey.clear()
+        for m in monkeys:
+            print(m.starting_items)
+
+sorted_monkeys = sorted(monkeys, key= lambda x: x.has_sent)
+
+print(sorted_monkeys[-1].has_sent * sorted_monkeys[-2].has_sent)
