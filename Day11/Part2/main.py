@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 class Monkey:
     def __init__(
@@ -36,17 +37,15 @@ def get_operation(line: str):
 
     operation = right_values[-2]
 
-    def operation_function(old: int):
+    def operation_function(old: np.int64):
         operation_value = old if right_values[-1] == "old" else int(right_values[-1])
-        print("operation_value", operation_value)
         result = 0
-        print("operation,", operation)
         if(operation == "+"):
             result = old + operation_value
         else:
             result = old * operation_value
 
-        return math.floor(result / 3)
+        return result % testing_mod_of_the_product
 
     return operation_function
 
@@ -78,7 +77,10 @@ with open("../input.txt") as f:
             )
 
 
-nr_of_rounds = 20
+testing_mod_of_the_product = math.prod(map(lambda x: x.divisble_by, monkeys))
+
+print(testing_mod_of_the_product)
+nr_of_rounds = 10000
 
 for i in range(nr_of_rounds):
     for monkey_index in range(len(monkeys)):
@@ -89,9 +91,11 @@ for i in range(nr_of_rounds):
             monkeys[monkey_to_send_to_index].receive(new_worry_level)
             monkey.add_sent()
         monkey.clear()
-        for m in monkeys:
-            print(m.starting_items)
 
 sorted_monkeys = sorted(monkeys, key= lambda x: x.has_sent)
+
+for m in monkeys:
+    print(m.has_sent)
+
 
 print(sorted_monkeys[-1].has_sent * sorted_monkeys[-2].has_sent)
