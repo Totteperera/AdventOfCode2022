@@ -1,12 +1,3 @@
-import re
-
-class Return_obj:
-    def __init__(self, index, array):
-        self.index = index
-        self.array = array
-
-number_re = "[0-9]"
-
 def compare_arrays_in_right_order(first, second):
     print("comparing", first, "with", second)
 
