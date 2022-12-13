@@ -34,6 +34,10 @@ class Node:
         self.parent = parent
         self.position = position
 
+        self.g = 0
+        self.h = 0
+        self.f = 0
+
     def __eq__(self, other) -> bool:
         return self.position == other.position
 
@@ -44,16 +48,17 @@ class Node:
 def astar(start, end):
     start_node = Node(None, start)
 
-    end_node = Node(None, end)
-
     queue = deque()
     queue.append((0, start_node))
     visited = {str(start_node)}
+    counter = 0
 
     while queue:
         dist, current_node = queue.popleft()
+        if counter % 1000 == 0:
+            print_chart(current_node, visited)
 
-        if current_node == end_node:
+        if current_node.position in end:
             print_chart(current_node, visited)
             print("FOUND PATH")
             path = []
@@ -91,6 +96,8 @@ def astar(start, end):
             visited.add(str(child))
             queue.append((dist+1 , child))
 
+        counter += 1
+
 def get_current_char(current_pos: tuple) -> str:
     return chart[current_pos[0]][current_pos[1]]
 
@@ -102,13 +109,13 @@ def is_next_step_valid(
     current_pos: tuple,
     next_pos: tuple) -> bool:
 
-    diff_in_ascii = get_ascii_value(next_pos) - get_ascii_value(current_pos)
+    diff_in_ascii = get_ascii_value(current_pos) - get_ascii_value(next_pos)
     return diff_in_ascii <= 1
 
 init()
 chart = []
 starting_pos = ()
-ending_pos = ()
+ending_pos = set()
 
 with open("../input.txt") as f:
     for line in f:
@@ -120,12 +127,11 @@ with open("../input.txt") as f:
 
 for c_i in range(len(chart)):
     for r_i in range(len(chart[c_i])):
-        if(chart[c_i][r_i] == "S"):
-            chart[c_i][r_i] = "a"
-            starting_pos = (c_i, r_i)
+        if(chart[c_i][r_i] == "a"):
+            ending_pos.add((c_i, r_i))
         if(chart[c_i][r_i] == "E"):
             chart[c_i][r_i] = "z"
-            ending_pos = (c_i, r_i)
+            starting_pos = (c_i, r_i)
 
 current_pos = starting_pos
 
