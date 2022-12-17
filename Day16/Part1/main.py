@@ -25,69 +25,63 @@ for left, right in line:
 minutes = 30
 nr_of_valves = len(valves)
 
-def tick():
-    global minutes
-    minutes -= 1
-    print("TICK MINUTES ARE NOW", minutes)
 
-def get_next_valve_flow(valve, minutes, visited):
+def shortest_path(start, dest):
+    q = deque()
+    vis = { start }
+    
+    distance = 0
+    q.append((distance,start))
 
-    # print("RUNNING", valve, minutes, visited)
-    if minutes <= 0 or len(visited) == nr_of_valves:
-        return 0 
+    while q:
 
-    if valve in visited:
-        return max([get_next_valve_flow(path, minutes - 1, set(visited)) for path in valves[valve].paths])
+        distance, current_valve = q.popleft()
 
-    visited.add(valve)
-    return valves[valve].flow * minutes + max([get_next_valve_flow(path, minutes - 2, set(visited)) for path in valves[valve].paths])
+        for path in valves[current_valve].paths:
 
+            if path == dest:
+                return distance + 1 
 
-visited = {"AA"}
-
-for v in valves:
-    if valves[v].flow == 0:
-        visited.add(v)
-
-totals = set()
+            if path not in vis:
+                q.append((distance + 1, path))
 
 
-q = deque()
+totals = 0
 
-# this is not working very well..
-# kolla i day 12 och använd den algon med lite adjustments
 
-print(get_next_valve_flow("AA", 30, visited))
-exit(1)
+a = {("a", 1),("a", 2), ("a", 20), ("a", 4), ("a", 28)}
 
+print(sorted(a, key=lambda x : x[1]))
+minutes_to_open_valve = 1
 
 while minutes > 0:
-    next_valve_flow = 0
-    next_valve = ""
-    print("current valve", current_valve)
-    for path in valves[current_valve].paths:
-        flow_value = get_next_valve_flow(path, minutes - 2)
 
-        if(flow_value > next_valve_flow):
-            next_valve_flow = flow_value
-            current_valve = path
+    open = [] 
 
-    print("next valve", current_valve, next_valve_flow)
+    for v in valves:
+        if valves[v].flow != 0 and not valves[v].open:
 
-    if not valves[current_valve].open and valves[current_valve].flow > 0:
-        tick()
+            action_minutes = shortest_path(current_valve, v) + minutes_to_open_valve
+            shortest = shortest_path(current_valve, v)
+            open.append((v, (valves[v].flow * (minutes - (shortest*2) + minutes_to_open_valve)), action_minutes))
 
-        if(minutes == 0):
-            break
 
-        valves[current_valve].open = True
-        totals.add(minutes * valves[current_valve].flow)
-        print("totals", totals)
+    if(len(open) == 0):
+        print(totals)
+        exit(1)
 
-    tick()
+    open = sorted(open, key=lambda x: x[1], reverse=True)
+    print(open)
+
+    current_valve, _ , action_minutes = open[0]
+    minutes = minutes - action_minutes
+
+    if(minutes <= 0):
+        print(totals)
+        exit(1)
     
-print(totals)
 
+    totals += valves[current_valve].flow * minutes
+    valves[current_valve].open = True
 
-
-
+    print("current valve", current_valve)
