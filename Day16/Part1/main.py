@@ -1,12 +1,20 @@
+import sys
 from collections import deque
+
+class Node:
+    def __init__(self, flow, path):
+        self.flow = flow
+        self.path = path
 
 class ValveMap:
     def __init__(self, open, flow, paths) -> None:
         self.open = open
         self.flow = flow
         self.paths = paths
+        self.shortest = {}
 
-line = [x.replace(",", "").split(";") for x in open("../input.txt").read().split("\n")]
+file_name = sys.argv[1]
+line = [x.replace(",", "").split(";") for x in open(file_name).read().split("\n")]
 
 valves = {}
 current_valve = "AA"
@@ -16,9 +24,6 @@ for left, right in line:
     right = right.replace("valves", "valve")
     left = left.split(" ")
     open = False
-
-    if left[1] == "AA":
-        open = True
 
     valves[left[1]] = ValveMap(open, int(left[-1].split("=")[-1]), [x for x in right.split("valve")[-1].strip().split(" ")])
 
@@ -46,42 +51,72 @@ def shortest_path(start, dest):
                 q.append((distance + 1, path))
 
 
-totals = 0
+def dfs(current_valve: str, paths: list, open: set, minutes: int) -> Node:
+    global current_max
 
-
-a = {("a", 1),("a", 2), ("a", 20), ("a", 4), ("a", 28)}
-
-print(sorted(a, key=lambda x : x[1]))
-minutes_to_open_valve = 1
-
-while minutes > 0:
-
-    open = [] 
-
-    for v in valves:
-        if valves[v].flow != 0 and not valves[v].open:
-
-            action_minutes = shortest_path(current_valve, v) + minutes_to_open_valve
-            shortest = shortest_path(current_valve, v)
-            open.append((v, (valves[v].flow * (minutes - (shortest*2) + minutes_to_open_valve)), action_minutes))
-
-
-    if(len(open) == 0):
-        print(totals)
-        exit(1)
-
-    open = sorted(open, key=lambda x: x[1], reverse=True)
-    print(open)
-
-    current_valve, _ , action_minutes = open[0]
-    minutes = minutes - action_minutes
+    n = []
 
     if(minutes <= 0):
-        print(totals)
-        exit(1)
+        return Node(0, paths)
+
+    if(len(open) == nr_of_valves):
+        return Node(0, paths)
     
+    for v in closed:
+        if v not in open:
+            if v in valves[current_valve].shortest:
+                action_minutes = valves[current_valve].shortest[v] + 1
+            else:
+                shortest = shortest_path(current_valve, v)
+                valves[current_valve].shortest[v] = shortest
+                action_minutes = shortest + 1
 
-    totals += valves[current_valve].flow * minutes
-    valves[current_valve].open = True
+            n.append((v, valves[v].flow, action_minutes))
+        
+    temp = []
+    for c,fv,am in n:
+        temp_o = set(open)
+        temp_o.add(c)
+        temp_path = list(paths)
+        temp_path.append((c,minutes-am))
 
-    print("current valve", current_valve)
+        flow_val = (fv*(minutes-am))
+
+        if(flow_val < 0):
+            continue
+
+        test_node = g(c, temp_path, temp_o, (minutes-am))
+        node = Node(flow_val + test_node.flow, test_node.path)
+        temp.append(node)
+    
+    if(len(temp) == 0):
+        return Node(0, paths)
+
+    node = sorted(temp, key=lambda x: x.flow, reverse=True)[0]
+    if node.flow > current_max:
+        current_max = node.flow
+        print("new max", current_max)
+
+    return node
+
+current_max = 0
+open = set()
+closed = set()
+
+for v in valves:
+    if valves[v].flow == 0:
+        open.add(v)
+    else:
+        closed.add(v)
+
+print(nr_of_valves)
+max_flow = dfs(current_valve, [(current_valve, 30)], set(open), 30)
+print(max_flow.flow)
+
+for p,m in max_flow.path:
+    print(p,m)
+
+for key in valves:
+    value = valves[key]
+    if len(value.shortest):
+        print(key, value.flow, value.shortest)
