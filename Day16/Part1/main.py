@@ -1,11 +1,6 @@
 import sys
 from collections import deque
 
-class Node:
-    def __init__(self, flow, path):
-        self.flow = flow
-        self.path = path
-
 class ValveMap:
     def __init__(self, open, flow, paths) -> None:
         self.open = open
@@ -51,16 +46,16 @@ def shortest_path(start, dest):
                 q.append((distance + 1, path))
 
 
-def dfs(current_valve: str, paths: list, open: set, minutes: int) -> Node:
+def dfs(current_valve: str, open: set, minutes: int):
     global current_max
 
     n = []
 
     if(minutes <= 0):
-        return Node(0, paths)
+        return 0
 
     if(len(open) == nr_of_valves):
-        return Node(0, paths)
+        return 0
     
     for v in closed:
         if v not in open:
@@ -77,27 +72,23 @@ def dfs(current_valve: str, paths: list, open: set, minutes: int) -> Node:
     for c,fv,am in n:
         temp_o = set(open)
         temp_o.add(c)
-        temp_path = list(paths)
-        temp_path.append((c,minutes-am))
 
         flow_val = (fv*(minutes-am))
 
         if(flow_val < 0):
             continue
-
-        test_node = g(c, temp_path, temp_o, (minutes-am))
-        node = Node(flow_val + test_node.flow, test_node.path)
-        temp.append(node)
+       
+        temp.append( flow_val + dfs(c, temp_o, (minutes-am)))
     
     if(len(temp) == 0):
-        return Node(0, paths)
+        return 0
 
-    node = sorted(temp, key=lambda x: x.flow, reverse=True)[0]
-    if node.flow > current_max:
-        current_max = node.flow
+    value = sorted(temp, reverse=True)[0]
+    if value > current_max:
+        current_max = value
         print("new max", current_max)
 
-    return node
+    return value
 
 current_max = 0
 open = set()
@@ -110,11 +101,7 @@ for v in valves:
         closed.add(v)
 
 print(nr_of_valves)
-max_flow = dfs(current_valve, [(current_valve, 30)], set(open), 30)
-print(max_flow.flow)
-
-for p,m in max_flow.path:
-    print(p,m)
+print(dfs(current_valve, set(open), 30))
 
 for key in valves:
     value = valves[key]
