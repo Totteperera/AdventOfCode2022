@@ -45,7 +45,6 @@ def shortest_path(start, dest):
             if path not in vis:
                 q.append((distance + 1, path))
 
-
 def dfs(current_valve: str, open: set, minutes: int):
     global current_max
 

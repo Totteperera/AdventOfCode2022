@@ -1,5 +1,6 @@
 import sys
 from collections import deque
+from itertools import combinations
 
 class ValveMap:
     def __init__(self, open, flow, paths) -> None:
@@ -45,8 +46,7 @@ def shortest_path(start, dest):
             if path not in vis:
                 q.append((distance + 1, path))
 
-
-def dfs(current_valve: str, open: set, minutes: int):
+def dfs(current_valve: str, open: set, minutes: int, id):
     global current_max
 
     n = []
@@ -78,30 +78,39 @@ def dfs(current_valve: str, open: set, minutes: int):
         if(flow_val < 0):
             continue
        
-        temp.append( flow_val + dfs(c, temp_o, (minutes-am)))
+        temp.append( flow_val + dfs(c, temp_o, (minutes-am), id))
     
     if(len(temp) == 0):
         return 0
 
     value = sorted(temp, reverse=True)[0]
-    if value > current_max:
-        current_max = value
-        print("new max", current_max)
 
     return value
 
-current_max = 0
 open = set()
-closed = set()
+closed = list()
 
 for v in valves:
     if valves[v].flow == 0:
         open.add(v)
     else:
-        closed.add(v)
+        closed.append(v)
+
+combs = sum([list(map(list, combinations(closed, i))) for i in range(len(closed) + 1)], [])
+
+maxval = 0
+print(closed)
+for i in range(len(combs)):
+
+    elephant = [x for x in filter(lambda y: y not in combs[i], closed)]
+
+    # print(combs)
+    val = (dfs(current_valve, set(combs[i]), 26, "me") + dfs(current_valve, set(elephant), 26, "elephant"))
+    maxval = max(maxval, val)
+    # print("maxval", maxval, "val", val)
 
 print(nr_of_valves)
-print(dfs(current_valve, set(open), 30))
+print(maxval)
 
 for key in valves:
     value = valves[key]
