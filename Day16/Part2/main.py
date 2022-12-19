@@ -46,7 +46,7 @@ def shortest_path(start, dest):
             if path not in vis:
                 q.append((distance + 1, path))
 
-def dfs(current_valve: str, open: set, minutes: int, id):
+def dfs(current_valve: str, open: set, minutes: int):
     global current_max
 
     n = []
@@ -78,7 +78,7 @@ def dfs(current_valve: str, open: set, minutes: int, id):
         if(flow_val < 0):
             continue
        
-        temp.append( flow_val + dfs(c, temp_o, (minutes-am), id))
+        temp.append( flow_val + dfs(c, temp_o, (minutes-am)))
     
     if(len(temp) == 0):
         return 0
@@ -105,7 +105,7 @@ for i in range(len(combs)):
     elephant = [x for x in filter(lambda y: y not in combs[i], closed)]
 
     # print(combs)
-    val = (dfs(current_valve, set(combs[i]), 26, "me") + dfs(current_valve, set(elephant), 26, "elephant"))
+    val = (dfs(current_valve, set(combs[i]), 26) + dfs(current_valve, set(elephant), 26))
     maxval = max(maxval, val)
     # print("maxval", maxval, "val", val)
 
