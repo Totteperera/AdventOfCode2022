@@ -49,20 +49,20 @@ for i in range(rocks_to_iterate):
 
     rock_max_x = max([x[0] for x in rock])
     rock_min_x = min([x[0] for x in rock])
-
     while rock_is_moving:
         jet = jets[jet_counter % len(jets)]
-        if jet_counter % len(jets) == 0:
-            print("restart jets, here something is wrong..")
+        # print("jet_counter  len(jets)", jet_counter % len(jets), jet, jetsmap[jet], "minx", rock_min_x)
         rock_next_x = jetsmap[jet]
         move_horizontally = True
 
         for rx,ry in rock:
-            if not can_move_horizontally(jet, rock_min_x, rock_max_x) or (rx + rock_next_x, ry - rock_next_y + 1) in solid:
+            if not can_move_horizontally(jet, rock_min_x, rock_max_x) or (rx + rock_next_x, ry - (rock_next_y - 1)) in solid:
                 move_horizontally = False
                 break
                 
         if move_horizontally:
+            rock_max_x = 0
+            rock_min_x = 7
             for ri in range(len(rock)):
                     rock_max_x = max(rock_max_x, rx + rock_next_x)
                     rock_min_x = min(rock_min_x, rx + rock_next_x)
@@ -81,17 +81,17 @@ for i in range(rocks_to_iterate):
         rock_next_y += 1
         jet_counter += 1
 
-    for y in range(max_y + 6):
-        for x in range(-1, 8):
-            if (x, y) in solid:
-                print("#", end="")
-            # elif (x, y + rock_next_y -1 ) in rock:
-            #     print("@", end="")
-            elif x == -1 or x == 7:
-                print("|" ,end = "")
-            else:
-                print(" ", end="")
-        print()
-    print()
+        # for y in reversed(range(max_y + 6)):
+        #     for x in range(-1, 8):
+        #         if (x, y) in solid:
+        #             print("#", end="")
+        #         elif (x, y + rock_next_y -1 ) in rock:
+        #             print("@", end="")
+        #         elif x == -1 or x == 7:
+        #             print("|" ,end = "")
+        #         else:
+        #             print(" ", end="")
+        #     print()
+        # print()
 
-print(max_y - 1)
+print(max_y)
