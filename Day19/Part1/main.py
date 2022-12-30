@@ -1,10 +1,15 @@
 import sys
 import re
-from collections import deque
+import multiprocessing
 filename = sys.argv[1]
 
+ORE = "o"
+CLAY = "c"
+OBSIDIAN = "ob"
+GEODE = "g"
 
-def can_build_robot(robot: dict):
+
+def can_build_robot(robot: dict, packing: dict):
     can_build = True
     for k, v in robot.items():
         if packing[k] < v:
@@ -12,102 +17,121 @@ def can_build_robot(robot: dict):
 
     return can_build
 
-def can_soon_build_robot(robot: dict):    
-    can_build = True
-    for k, v in robot.items():
-        if packing[k] + robots[k] * 2 < v:
-            can_build = False
+def gather(packing: dict, robots: dict):
+    temp = {}
 
-    return can_build
+    for robot_id, gatherers in robots.items():
+        temp[robot_id] = packing[robot_id] + gatherers
 
-for line in open(filename).read().strip().split("\n"):
-    left = line.split(":")[0]
-    right = line.split(":")[1]
+    return temp
 
-    blueprint = re.findall("\d+", line.split(":")[0])[0]
-    print("blueprint", blueprint)
+def use(packing: dict, robot_value: dict):
+    temp = {}
+    for k, v in packing.items():
+        temp[k] = v
 
-    robot_texts = right.split(".")
+    for item_id, item_value in robot_value.items():
+        temp[item_id] = packing[item_id] - item_value
 
-    blueprint_robots = {
-        "geode": {
-            "ore": int(re.findall("\d+", robot_texts[3])[0]),
-            "obsidian": int(re.findall("\d+", robot_texts[3])[1])
-        },
-        "obsidian": {
-            "ore": int(re.findall("\d+", robot_texts[2])[0]),
-            "clay": int(re.findall("\d+", robot_texts[2])[1])
-        },
-        "clay": {
-            "ore": int(re.findall("\d+", robot_texts[1])[0])
-        },
-        "ore": {
-            "ore": int(re.findall("\d+", robot_texts[0])[0])
+    return temp
+
+
+def construct_robot(robots: dict, id: str):
+    temp = {}
+    for k, v in robots.items():
+        additional = 0
+        if k == id:
+            additional = 1
+
+        temp[k] = v + additional
+    return temp
+
+
+def f(x):
+
+    robots, packing, minutes, blueprint, blueprint_robots, cache = x
+    c_key = (str(robots), str(packing), minutes)
+
+    if c_key in cache:
+        return (cache[c_key], blueprint)
+
+    if minutes == 0:
+        return (packing, blueprint)
+
+    alternatives = []
+
+    # append no build option
+    alternatives.append((dict(robots), gather(packing, robots), minutes - 1, blueprint, blueprint_robots, cache))
+
+    for robot_id, robot_value in blueprint_robots.items():
+        if can_build_robot(robot_value, packing):
+            alternatives.append((
+                construct_robot(robots, robot_id),
+                gather(use(packing, blueprint_robots[robot_id]), robots),
+                minutes - 1,
+                blueprint,
+                blueprint_robots,
+                cache
+            ))
+
+    returned = max([f(x) for x in alternatives], key=lambda x: x[0][GEODE])
+    cache[c_key] = returned[0]
+
+    return (returned[0],blueprint)
+
+total = 0
+inputs = []
+blueprint_robots = {}
+cache = {}
+
+if __name__ == "__main__":
+
+    for line in open(filename).read().strip().split("\n"):
+        left = line.split(":")[0]
+        right = line.split(":")[1]
+
+        blueprint = int(re.findall("\d+", left)[0])
+        cache[blueprint] = {}
+
+        print("blueprint", blueprint)
+
+        robot_texts = right.split(".")
+
+        blueprint_robots = {
+            GEODE: {
+                ORE: int(re.findall("\d+", robot_texts[3])[0]),
+                OBSIDIAN: int(re.findall("\d+", robot_texts[3])[1])
+            },
+            OBSIDIAN: {
+                ORE: int(re.findall("\d+", robot_texts[2])[0]),
+                CLAY: int(re.findall("\d+", robot_texts[2])[1])
+            },
+            CLAY: {
+                ORE: int(re.findall("\d+", robot_texts[1])[0])
+            },
+            ORE: {
+                ORE: int(re.findall("\d+", robot_texts[0])[0])
+            }
         }
-    }
 
-    packing = {
-        "ore": 0,
-        "clay": 0,
-        "obsidian": 0,
-        "geode": 0
-    }
+        packing = {
+            ORE: 0,
+            CLAY: 0,
+            OBSIDIAN: 0,
+            GEODE: 0
+        }
 
-    robots = {
-        "ore": 1,
-        "clay": 0,
-        "obsidian": 0,
-        "geode": 0
-    }
+        robots = {
+            ORE: 1,
+            CLAY: 0,
+            OBSIDIAN: 0,
+            GEODE: 0
+        }
 
-    construction_line = deque()
+        inputs.append((dict(robots), dict(packing), 24, blueprint, blueprint_robots, {}))
 
-    for i in range(24):
-        print("------ minute", i + 1)
+    pool = multiprocessing.Pool()
 
-        print("ROBOTS:\n")
-        for k,v in robots.items():
-            print(k + ":",v)
-        print()
-
-        print("PACKAGING\n")
-        for k,v in packing.items():
-            print(k + ":",v)
-        print()
-
-
-        # add to construction line
-        for robot_id, robot_value in blueprint_robots.items():
-
-            if can_build_robot(robot_value):
-                print("Adding", robot_id, "to construction line")
-                construction_line.append(robot_id)
-
-                for item_key, item_value in robot_value.items():
-                    print("spending", item_value, "of", item_key)
-                    packing[item_key] -= item_value
-
-                break
-
-            if can_soon_build_robot(robot_value):
-                print("can soon build", robot_id)
-                break
-
-        # gather
-        for robot_id, robot_value in robots.items():
-            print("gather", robot_value, "of", robot_id)
-            packing[robot_id] += robot_value
-            
-        print("PACKAGING\n")
-        for k,v in packing.items():
-            print(k + ":",v)
-        print()
-        
-        # build
-        while construction_line:
-            new_robot_id = construction_line.popleft()
-            print(new_robot_id, "added")
-            robots[new_robot_id] += 1
-
-    print("total geode:", packing["geode"])
-    print("\n\n\n")
+    result = pool.map(f, inputs)
+    test = sum([x[0][GEODE]*x[1] for x in result])
+    print(test)
